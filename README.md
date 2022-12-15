@@ -52,3 +52,9 @@ BAZ=<BAZ>
 
 I use this in my CI/CD pipelines to ensure that all environment variables are
 documented and that secrets are not leaked.
+
+## Related Projects
+
+- [envy](https://github.com/mre/envy): A Rust library for managing environment variables
+  globally. Automatically loads environment variables from a global
+  config file and sets them in the current shell session when entering a directory.
