@@ -28,18 +28,8 @@ struct Args {
     example: Vec<String>,
 }
 
-
-
-/// Scrubs sensitive data from a .env file and generates an env.sample file
-fn scrub_env_file(
-    env_file_name: &String,
-    sample_file_name: &String,
-    examples: &HashMap<String, String>,
-) {
+fn create_sample_content(env_file: String, examples: &HashMap<String, String>) -> String {
     let mut sample_content = String::new();
-
-    let env_file = fs::read_to_string(env_file_name).unwrap();
-
     for line in env_file.lines() {
         if !line.starts_with("#") && !line.trim().is_empty() {
             let env_var = line.split('=').collect::<Vec<&str>>()[0];
@@ -52,6 +42,17 @@ fn scrub_env_file(
             sample_content.push_str(&format!("{}\n", line));
         }
     }
+    sample_content
+}
+
+/// Scrubs sensitive data from a .env file and generates an env.sample file
+fn scrub_env_file(
+    env_file_name: &String,
+    sample_file_name: &String,
+    examples: &HashMap<String, String>,
+) {
+    let env_file = fs::read_to_string(env_file_name).unwrap();
+    let sample_content = create_sample_content(env_file, examples);
 
     let mut sample_file = File::create(sample_file_name).unwrap();
     sample_file.write_all(sample_content.as_bytes()).unwrap();
@@ -72,4 +73,26 @@ fn main() {
     }
 
     scrub_env_file(&args.env_file, &sample_file_name, &examples);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_create_sample_content() {
+        let env_file = "DB_HOST=localhost\nDB_USER=root\nDB_PASSWORD=secret\nDB_NAME=database";
+
+        let mut examples = HashMap::new();
+        examples.insert("DB_HOST".to_string(), "localhost".to_string());
+
+        let sample_content = create_sample_content(env_file.to_string(), &examples);
+
+        assert_eq!(
+            sample_content,
+            "DB_HOST=localhost\nDB_USER=<DB_USER>\nDB_PASSWORD=<DB_PASSWORD>\nDB_NAME=<DB_NAME>\n"
+        );
+    }
 }
