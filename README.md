@@ -9,7 +9,11 @@ is scrubbed of secrets/values and made available as `env.sample`. This ensures
 that all application environment variables are safely and automatically
 documented without leaking secrets.
 
+## Installation
 
+```
+cargo install --git https://github.com/mre/envsync
+```
 
 ## Usage
 
@@ -43,3 +47,8 @@ FOO=<FOO>
 BAR=bla
 BAZ=<BAZ>
 ```
+
+## CI/CD
+
+I use this in my CI/CD pipelines to ensure that all environment variables are
+documented and that secrets are not leaked.
