@@ -63,7 +63,9 @@ fn main() {
 
     let sample_file_name = match args.sample_file {
         Some(file_name) => file_name,
-        None => args.env_file.replace(".env", ".env.sample"),
+        None => {
+            format!("{}.sample", args.env_file)
+        }
     };
 
     let mut examples = HashMap::new();
