@@ -10,6 +10,9 @@ use std::process::Command;
 fn smoke_test() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("envsync")?;
     cmd.arg("fixtures/.env");
+    cmd.arg("--sample-file");
+    cmd.arg("fixtures/.env.sample");
+
     cmd.assert().success().stdout(predicate::str::contains(
         "Creating sample env file: fixtures/.env.sample",
     ));
@@ -32,6 +35,8 @@ fn smoke_test() -> Result<(), Box<dyn std::error::Error>> {
 fn smoke_test_replace_example_values() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("envsync")?;
     cmd.arg("fixtures/.env");
+    cmd.arg("--sample-file");
+    cmd.arg("fixtures/.env.sample_replace_example_values");
     cmd.arg("--example");
     cmd.arg("BAR=123");
     cmd.assert().success().stdout(predicate::str::contains(
@@ -39,7 +44,7 @@ fn smoke_test_replace_example_values() -> Result<(), Box<dyn std::error::Error>>
     ));
 
     // Check contents of the sample file
-    let sample_file = std::fs::read_to_string("fixtures/.env.sample")?;
+    let sample_file = std::fs::read_to_string("fixtures/.env.sample_replace_example_values")?;
 
     // Check that it contains the same env vars as the original file
     assert!(sample_file.contains("FOO=<FOO>"));
