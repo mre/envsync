@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use clap::{command, Parser};
 use std::collections::HashMap;
 use std::fs::{self, File};
@@ -50,15 +51,19 @@ fn scrub_env_file(
     env_file_name: &String,
     sample_file_name: &String,
     examples: &HashMap<String, String>,
-) {
-    let env_file = fs::read_to_string(env_file_name).unwrap();
+) -> Result<()> {
+    let env_file = fs::read_to_string(env_file_name).context("Could not read .env file")?;
     let sample_content = create_sample_content(env_file, examples);
 
-    let mut sample_file = File::create(sample_file_name).unwrap();
-    sample_file.write_all(sample_content.as_bytes()).unwrap();
+    let mut sample_file =
+        File::create(sample_file_name).context("Cannot create env.sample file")?;
+    sample_file
+        .write_all(sample_content.as_bytes())
+        .context("Cannot write to env.sample file")?;
+    Ok(())
 }
 
-fn main() {
+fn main() -> Result<()> {
     let args = Args::parse();
 
     let sample_file_name = match args.sample_file {
@@ -74,7 +79,9 @@ fn main() {
         examples.insert(example_parts[0].to_string(), example_parts[1].to_string());
     }
 
-    scrub_env_file(&args.env_file, &sample_file_name, &examples);
+    scrub_env_file(&args.env_file, &sample_file_name, &examples)
+        .context("Error while creating sample env file")?;
+    Ok(())
 }
 
 #[cfg(test)]
