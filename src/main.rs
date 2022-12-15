@@ -3,6 +3,7 @@ use clap::{command, Parser};
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::prelude::*;
+use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -12,14 +13,14 @@ struct Args {
         default_value = ".env",
         help = "Sets the .env file to create a .env.sample for (defaults to .env)"
     )]
-    env_file: String,
+    env_file: PathBuf,
     #[clap(
         short,
         long,
         value_name = "FILE",
         help = "Sets the env.sample file to use (defaults to name of .env file with .env replaced by .env.sample)"
     )]
-    sample_file: Option<String>,
+    sample_file: Option<PathBuf>,
     #[clap(
         short,
         long,
@@ -48,8 +49,8 @@ fn create_sample_content(env_file: String, examples: &HashMap<String, String>) -
 
 /// Scrubs sensitive data from a .env file and generates an env.sample file
 fn scrub_env_file(
-    env_file_name: &String,
-    sample_file_name: &String,
+    env_file_name: PathBuf,
+    sample_file_name: PathBuf,
     examples: &HashMap<String, String>,
 ) -> Result<()> {
     let env_file = fs::read_to_string(env_file_name).context("Could not read .env file")?;
@@ -68,10 +69,10 @@ fn main() -> Result<()> {
 
     let sample_file_name = match args.sample_file {
         Some(file_name) => file_name,
-        None => {
-            format!("{}.sample", args.env_file)
-        }
+        None => sample_file_path(&args.env_file)?,
     };
+
+    println!("Creating sample env file: {}", sample_file_name.display());
 
     let mut examples = HashMap::new();
     for example in args.example {
@@ -79,9 +80,33 @@ fn main() -> Result<()> {
         examples.insert(example_parts[0].to_string(), example_parts[1].to_string());
     }
 
-    scrub_env_file(&args.env_file, &sample_file_name, &examples)
+    scrub_env_file(args.env_file, sample_file_name, &examples)
         .context("Error while creating sample env file")?;
     Ok(())
+}
+
+/// Returns the path to the sample file based on the path to the env file
+///
+/// # Example
+///
+/// ```rust
+/// let env_file = PathBuf::from("/path/to/.env");
+/// let sample_file = sample_file_path(env_file);
+/// assert_eq!(sample_file, PathBuf::from("/path/to/.env.sample"));
+/// ```
+fn sample_file_path(env_file: &PathBuf) -> Result<PathBuf> {
+    let env_file_name = env_file
+        .file_name()
+        .context("Cannot get filename from env_file")?
+        .to_str()
+        .context("Cannot convert env_file name to string")?;
+
+    let sample_file_name = format!("{}.sample", env_file_name);
+
+    let mut path = env_file.clone();
+    path.set_file_name(sample_file_name);
+
+    Ok(path)
 }
 
 #[cfg(test)]
